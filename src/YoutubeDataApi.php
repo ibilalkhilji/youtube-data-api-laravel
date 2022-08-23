@@ -35,29 +35,28 @@ class YoutubeDataApi
         if ($this->response == null)
             throw new Exception("Failed to parse response, fetch method didn't triggered.");
 
-        $data = json_decode($this->response);
         $videoData = new VideoData();
-        $videoData->videoId = trim($data->items[0]->id);
-        $videoData->title = $data->items[0]->snippet->title;
-        $videoData->description = trim($data->items[0]->snippet->description);
-        $videoData->channelTitle = $data->items[0]->snippet->channelTitle;
-        $videoData->publishedAt = $data->items[0]->snippet->publishedAt;
+        $videoData->videoId = trim($this->response->items[0]->id);
+        $videoData->title = $this->response->items[0]->snippet->title;
+        $videoData->description = trim($this->response->items[0]->snippet->description);
+        $videoData->channelTitle = $this->response->items[0]->snippet->channelTitle;
+        $videoData->publishedAt = $this->response->items[0]->snippet->publishedAt;
         $videoData->thumbnails = new Thumbnails([
             [
                 "default",
-                $data->items[0]->snippet->thumbnails->default->url,
-                $data->items[0]->snippet->thumbnails->default->width,
-                $data->items[0]->snippet->thumbnails->default->height
+                $this->response->items[0]->snippet->thumbnails->default->url,
+                $this->response->items[0]->snippet->thumbnails->default->width,
+                $this->response->items[0]->snippet->thumbnails->default->height
             ], [
                 "medium",
-                $data->items[0]->snippet->thumbnails->medium->url,
-                $data->items[0]->snippet->thumbnails->medium->width,
-                $data->items[0]->snippet->thumbnails->medium->height
+                $this->response->items[0]->snippet->thumbnails->medium->url,
+                $this->response->items[0]->snippet->thumbnails->medium->width,
+                $this->response->items[0]->snippet->thumbnails->medium->height
             ], [
                 "high",
-                $data->items[0]->snippet->thumbnails->high->url,
-                $data->items[0]->snippet->thumbnails->high->width,
-                $data->items[0]->snippet->thumbnails->high->height
+                $this->response->items[0]->snippet->thumbnails->high->url,
+                $this->response->items[0]->snippet->thumbnails->high->width,
+                $this->response->items[0]->snippet->thumbnails->high->height
             ],
         ]);
         return $videoData;
@@ -169,7 +168,7 @@ class YoutubeDataApi
         ]);
         try {
             $res = $client->request('GET', "?part=id,+snippet&key={$this->getApiKey()}&id={$this->videoID}");
-            $this->response = $res->getBody()->getContents();
+            $this->response = json_decode($res->getBody()->getContents());
             return $this->parseResponse();
         } catch (GuzzleException $exception) {
             return response()->json([
@@ -182,40 +181,44 @@ class YoutubeDataApi
     /**
      * Returns the title of the video
      * @return string
+     * @throws Exception
      */
     public function getTitle(): string
     {
-        $data = json_decode($this->response);
-        return $data->items[0]->snippet->title;
+        if ($this->response == null) throw new Exception("Method fetch not fired..");
+        return $this->response->items[0]->snippet->title;
     }
 
     /**
      * Returns the description of the video
      * @return string
+     * @throws Exception
      */
     public function getDescription(): string
     {
-        $data = json_decode($this->response);
-        return $data->items[0]->snippet->description;
+        if ($this->response == null) throw new Exception("Method fetch not fired..");
+        return $this->response->items[0]->snippet->description;
     }
 
     /**
      * Returns the channel title of the video
      * @return string
+     * @throws Exception
      */
     public function getChannelTitle(): string
     {
-        $data = json_decode($this->response);
-        return $data->items[0]->snippet->channelTitle;
+        if ($this->response == null) throw new Exception("Method fetch not fired..");
+        return $this->response->items[0]->snippet->channelTitle;
     }
 
     /**
      * Returns the channel title of the video
      * @return string
+     * @throws Exception
      */
     public function getPublishedAt(): string
     {
-        $data = json_decode($this->response);
-        return $data->items[0]->snippet->publishedAt;
+        if ($this->response == null) throw new Exception("Method fetch not fired..");
+        return $this->response->items[0]->snippet->publishedAt;
     }
 }
