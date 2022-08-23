@@ -13,7 +13,7 @@ After you have installed the package, open your Laravel config file config/app.p
 In the $providers array add the service providers for this package.
 
 ```
-Khaleejinfotech\YoutubeDataApiLaravel\YoutubeDataApiServiceProvider::class,
+Khaleejinfotech\YoutubeDataApi\YoutubeDataApiServiceProvider::class,
 ```
 
 Publish the config file with
