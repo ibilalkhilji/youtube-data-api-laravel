@@ -1,0 +1,33 @@
+{
+    "name": "khaleejinfotech/youtube-data-api-laravel",
+    "description": "YouTube Metadata normal grabs singular details about a video and its uploader.",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Khaleejinfotech\\YoutubeDataApiLaravel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Bilal Khilji",
+            "email": "kbinfo4u@gmail.com",
+            "homepage": "https://khaleejinfotech.com",
+            "role": "Software Developer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "guzzlehttp/guzzle": "^7.4"
+    },
+    "require-dev": {
+        "ext-json": "*"
+    },
+    "extras": {
+        "laravel": {
+            "providers": [
+                "Khaleejinfotech\\YoutubeDataApiLaravel\\YoutubeDataApiServiceProvider"
+            ]
+        }
+    }
+}
