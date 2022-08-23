@@ -178,4 +178,44 @@ class YoutubeDataApi
             ], 500);
         }
     }
+
+    /**
+     * Returns the title of the video
+     * @return string
+     */
+    public function getTitle(): string
+    {
+        $data = json_decode($this->response);
+        return $data->items[0]->snippet->title;
+    }
+
+    /**
+     * Returns the description of the video
+     * @return string
+     */
+    public function getDescription(): string
+    {
+        $data = json_decode($this->response);
+        return $data->items[0]->snippet->description;
+    }
+
+    /**
+     * Returns the channel title of the video
+     * @return string
+     */
+    public function getChannelTitle(): string
+    {
+        $data = json_decode($this->response);
+        return $data->items[0]->snippet->channelTitle;
+    }
+
+    /**
+     * Returns the channel title of the video
+     * @return string
+     */
+    public function getPublishedAt(): string
+    {
+        $data = json_decode($this->response);
+        return $data->items[0]->snippet->publishedAt;
+    }
 }
