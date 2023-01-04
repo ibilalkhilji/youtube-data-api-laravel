@@ -7,6 +7,8 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\RequestOptions;
 use Illuminate\Http\JsonResponse;
+use Khaleejinfotech\YoutubeDataApi\Contracts\VideoItem;
+use Khaleejinfotech\YoutubeDataApi\Contracts\VideoList;
 use Khaleejinfotech\YoutubeDataApi\Facade\Thumbnails;
 use Khaleejinfotech\YoutubeDataApi\Facade\VideoData;
 
@@ -15,6 +17,9 @@ class YoutubeDataApi
     private $api = null;
     private $response = null;
     private $videoID = null;
+    private $channelId = null;
+    private $maxPerPage = 15;
+    private $params = [];
 
     /**
      * Sets api key if defined in config file when booted
@@ -60,6 +65,50 @@ class YoutubeDataApi
             ],
         ]);
         return $videoData;
+    }
+
+    /**
+     * Build the VideoList object of the response
+     * @throws Exception
+     */
+    protected function buildVideoList(): VideoList
+    {
+        if ($this->response == null)
+            throw new Exception("Failed to parse response, getVideoList method didn't triggered.");
+
+        $videoList = new VideoList();
+        $videoList->totalResults = $this->response->pageInfo->totalResults;
+        $videoList->resultsPerPage = $this->response->pageInfo->resultsPerPage;
+        $videoList->nextPageToken = $this->response->nextPageToken ?? false;
+        $videoList->prevPageToken = $this->response->prevPageToken ?? false;
+        foreach ($this->response->items as $item) {
+            $videoItem = new VideoItem();
+            $videoItem->videoId = $item->id->videoId;
+            $videoItem->title = $item->snippet->title;
+            $videoItem->description = $item->snippet->description;
+            $videoItem->publishedAt = $item->snippet->publishedAt;
+            $videoItem->publishedTime = $item->snippet->publishTime;
+            $videoItem->thumbnails = new Thumbnails([
+                [
+                    "default",
+                    $item->snippet->thumbnails->default->url,
+                    $item->snippet->thumbnails->default->width,
+                    $item->snippet->thumbnails->default->height
+                ], [
+                    "medium",
+                    $item->snippet->thumbnails->medium->url,
+                    $item->snippet->thumbnails->medium->width,
+                    $item->snippet->thumbnails->medium->height
+                ], [
+                    "high",
+                    $item->snippet->thumbnails->high->url,
+                    $item->snippet->thumbnails->high->width,
+                    $item->snippet->thumbnails->high->height
+                ],
+            ]);
+            $videoList->videoItems[] = $videoItem;
+        }
+        return $videoList;
     }
 
     /**
@@ -170,6 +219,70 @@ class YoutubeDataApi
             $res = $client->request('GET', "?part=id,+snippet&key={$this->getApiKey()}&id={$this->videoID}");
             $this->response = json_decode($res->getBody()->getContents());
             return $this->parseResponse();
+        } catch (GuzzleException $exception) {
+            return response()->json([
+                'code' => $exception->getCode(),
+                'message' => $exception->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Sets channel Id to get list of the videos
+     * @param string $channelId
+     * @return YoutubeDataApi
+     */
+    public function setChannelId(string $channelId): YoutubeDataApi
+    {
+        $this->channelId = $channelId;
+        return $this;
+    }
+
+    /**
+     * Limits the videos par page instance
+     * @param int $limit
+     * @return YoutubeDataApi
+     */
+    public function setMaxPerPage(int $limit = 15): YoutubeDataApi
+    {
+        $this->maxPerPage = $limit;
+        return $this;
+    }
+
+    /**
+     * Move the cursor forward and backward depending on pageToken
+     * @param string $pageToken
+     * @return YoutubeDataApi
+     */
+    public function paginate(string $pageToken): YoutubeDataApi
+    {
+        if ($pageToken != null || $pageToken != '')
+            $this->params['pageToken'] = $pageToken;
+        return $this;
+    }
+
+    /**
+     * Returns the list of videos available for the given channel Id
+     * @throws Exception
+     */
+    public function getVideoList()
+    {
+        $url = '';
+        if ($this->channelId == null || $this->channelId == '')
+            throw new Exception("Channel ID not specified.");
+
+        $client = new Client(['base_uri' => 'https://www.googleapis.com/youtube/v3/search', RequestOptions::VERIFY => false]);
+        try {
+            $this->params['key'] = $this->getApiKey();
+            $this->params['part'] = 'id,+snippet';
+            $this->params['channelId'] = $this->channelId;
+            $this->params['type'] = 'video';
+            $this->params['maxResults'] = $this->maxPerPage;
+
+            $url = (strpos($url, '?') === false ? '?' : '') . http_build_query($this->params);
+            $res = $client->request('GET', $url);
+            $this->response = json_decode($res->getBody()->getContents());
+            return $this->buildVideoList();
         } catch (GuzzleException $exception) {
             return response()->json([
                 'code' => $exception->getCode(),
